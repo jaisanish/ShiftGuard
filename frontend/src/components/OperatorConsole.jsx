@@ -60,8 +60,8 @@ export default function OperatorConsole() {
       try {
         const opId = telemetry?.operator_id || 'OP-101';
         const recData = await fetchTrainingRecommendations(opId);
-        if (isSubscribed && recData?.recommendations?.length > 0) {
-          setCoachingRecommendation(recData.recommendations[0]);
+        if (isSubscribed && Array.isArray(recData) && recData.length > 0) {
+          setCoachingRecommendation(recData[0]);
         }
       } catch (err) {
         console.warn('[OperatorConsole] Failed to fetch coaching recommendations:', err);

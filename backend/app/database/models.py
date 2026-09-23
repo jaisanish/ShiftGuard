@@ -238,6 +238,21 @@ class TrainingRecordModel(Base):
     status = Column(String(32), nullable=False, default="SUCCESS")  # SUCCESS, FAILED, RUNNING
 
 
+class TrainingCompletionModel(Base):
+    """Operator quiz completion audit trail for closed-loop coaching."""
+    __tablename__ = "training_completions"
+
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    lesson_id = Column(String(64), nullable=False, index=True)
+    lesson_title = Column(String(256), nullable=False)
+    operator_id = Column(String(64), nullable=False, index=True)
+    completed_at = Column(String(64), nullable=False, default=utc_now_iso, index=True)
+    score_pct = Column(Integer, nullable=False)
+    passed = Column(Boolean, nullable=False)
+
+    __table_args__ = (Index("ix_training_completions_operator_lesson", "operator_id", "lesson_id"),)
+
+
 # ============================================================================
 # 8. Sync Outbox Model (Phase 5 Offline-First Synchronization)
 # ============================================================================

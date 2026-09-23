@@ -9,6 +9,10 @@ quiz evaluations, and training history tracking.
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from sqlalchemy import desc, select
+from sqlalchemy.orm import Session
+
+from backend.app.database.models import AlertModel, AnomalyModel, IncidentModel, TrainingCompletionModel
 
 from backend.app.schemas.training import (
     Lesson,
@@ -196,24 +200,26 @@ class TrainingService:
                 return lesson
         return None
 
-    def get_recommendations(self, operator_id: Optional[str] = None) -> List[TrainingRecommendation]:
-        """
-        Returns active coaching recommendations.
-        Provides contract for future behavior/incident correlation engine.
-        """
-        return [
-            TrainingRecommendation(
-                lesson_id="LES-SOZ-01",
-                title="Safe Operating Zones & Spotting Separation",
-                reason="Recommended because repeated proximity events were detected.",
-                operator_id=operator_id or "OP-101",
-                recommended_at="2026-09-23T18:30:00Z",
-                priority="HIGH",
-                duration_min=6,
-            )
-        ]
+    def get_recommendations(self, db: Session, operator_id: Optional[str] = None) -> List[TrainingRecommendation]:
+        """Map persisted advisory/safety evidence to human-reviewable lesson suggestions."""
+        operator = operator_id or "OP-101"
+        recommendations: list[TrainingRecommendation] = []
+        proximity = list(db.execute(select(AlertModel).where(AlertModel.operator_id == operator, AlertModel.alert_type == "PROXIMITY").order_by(desc(AlertModel.timestamp)).limit(3)).scalars())
+        proximity += list(db.execute(select(IncidentModel).where(IncidentModel.operator_id == operator, IncidentModel.incident_type == "PROXIMITY").order_by(desc(IncidentModel.triggered_at)).limit(3)).scalars())
+        seatbelt = list(db.execute(select(AlertModel).where(AlertModel.operator_id == operator, AlertModel.alert_type == "SEATBELT").order_by(desc(AlertModel.timestamp)).limit(3)).scalars())
+        anomalies = list(db.execute(select(AnomalyModel).where(AnomalyModel.operator_id == operator).order_by(desc(AnomalyModel.window_end)).limit(3)).scalars())
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        if proximity:
+            recommendations.append(TrainingRecommendation(lesson_id="LES-SOZ-01", title="Safe Operating Zones & Spotting Separation", reason=f"Recommended from {len(proximity)} persisted proximity safety event(s).", operator_id=operator, recommended_at=now, priority="HIGH", duration_min=6, evidence=[f"{type(item).__name__}:{item.id}" for item in proximity]))
+        if seatbelt:
+            recommendations.append(TrainingRecommendation(lesson_id="LES-SBL-02", title="Seatbelt Interlock Protocols & Dynamic Roll Mitigation", reason=f"Recommended from {len(seatbelt)} persisted seatbelt safety alert(s).", operator_id=operator, recommended_at=now, priority="HIGH", duration_min=4, evidence=[f"AlertModel:{item.id}" for item in seatbelt]))
+        if anomalies:
+            recommendations.append(TrainingRecommendation(lesson_id="LES-TRC-03", title="Muddy Ramp Traction & Severe Incline Haulage", reason=f"Recommended from {len(anomalies)} advisory operating-pattern anomaly result(s); review with a supervisor.", operator_id=operator, recommended_at=now, priority="MEDIUM", duration_min=8, evidence=[f"AnomalyModel:{item.id}" for item in anomalies]))
+        if not recommendations:
+            recommendations.append(TrainingRecommendation(lesson_id="LES-SOZ-01", title="Safe Operating Zones & Spotting Separation", reason="Baseline proximity safety refresher; no recent persisted coaching trigger was found.", operator_id=operator, recommended_at=now, priority="HIGH", duration_min=6, evidence=[]))
+        return recommendations
 
-    def record_completion(self, request: TrainingCompletionRequest) -> TrainingHistoryItem:
+    def record_completion(self, db: Session, request: TrainingCompletionRequest) -> TrainingHistoryItem:
         lesson = self.get_lesson_by_id(request.lesson_id)
         title = lesson.title if lesson else request.lesson_id
 
@@ -226,13 +232,15 @@ class TrainingService:
             score_pct=request.score_pct,
             passed=request.passed,
         )
-        self._history.insert(0, item)
+        db.add(TrainingCompletionModel(**item.model_dump()))
+        db.commit()
         return item
 
-    def get_history(self, operator_id: Optional[str] = None) -> List[TrainingHistoryItem]:
+    def get_history(self, db: Session, operator_id: Optional[str] = None) -> List[TrainingHistoryItem]:
+        statement = select(TrainingCompletionModel).order_by(desc(TrainingCompletionModel.completed_at))
         if operator_id:
-            return [h for h in self._history if h.operator_id == operator_id]
-        return self._history
+            statement = statement.where(TrainingCompletionModel.operator_id == operator_id)
+        return [TrainingHistoryItem.model_validate(row, from_attributes=True) for row in db.execute(statement).scalars()]
 
 
 # Global singleton

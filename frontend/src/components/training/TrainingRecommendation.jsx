@@ -44,6 +44,9 @@ export default function TrainingRecommendation({
             <p className="text-zinc-200">
               {recommendation.reason}
             </p>
+            {recommendation.evidence?.length > 0 && (
+              <p className="text-[10px] text-zinc-400">Evidence: {recommendation.evidence.join(', ')}</p>
+            )}
           </div>
         </div>
 

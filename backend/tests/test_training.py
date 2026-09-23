@@ -11,6 +11,7 @@ Validates:
 """
 
 import pytest
+from backend.app.database.models import AlertModel
 
 
 def test_get_training_recommendations(client):
@@ -81,3 +82,17 @@ def test_record_training_completion_and_history(client):
     history = h_res.json()
     assert len(history) >= 1
     assert any(h["lesson_id"] == "LES-SOZ-01" for h in history)
+
+
+def test_recommendation_includes_persisted_safety_evidence(client, db_session):
+    db_session.add(AlertModel(
+        id="alert-coach-1", timestamp="2026-09-24T12:00:00Z", machine_id="CAT-1",
+        operator_id="OP-COACH", task_id="TASK-1", alert_type="PROXIMITY", severity="WARNING",
+        status="ACTIVE", source="EDGE", title="Proximity", message="Clearance warning",
+    ))
+    db_session.commit()
+    response = client.get("/api/training/recommendations?operator_id=OP-COACH")
+    assert response.status_code == 200
+    recommendation = response.json()[0]
+    assert recommendation["lesson_id"] == "LES-SOZ-01"
+    assert recommendation["evidence"] == ["AlertModel:alert-coach-1"]

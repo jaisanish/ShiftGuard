@@ -41,6 +41,7 @@ class TrainingRecommendation(BaseModel):
     recommended_at: str = Field(..., description="ISO 8601 timestamp of recommendation")
     priority: str = Field(default="HIGH", description="Priority level: HIGH, MEDIUM, LOW")
     duration_min: int = Field(..., description="Estimated duration in minutes")
+    evidence: List[str] = Field(default_factory=list, description="Persisted advisory evidence references")
 
 
 class TrainingCompletionRequest(BaseModel):
