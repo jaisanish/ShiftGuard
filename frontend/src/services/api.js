@@ -471,3 +471,25 @@ export async function fetchAnomalySummary(operatorId) {
     return null;
   }
 }
+
+/** Phase 7: Read ETA model readiness and a persisted task prediction. */
+export async function fetchETAModelHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/api/eta/model/health`, { signal: AbortSignal.timeout(4000) });
+    return await handleResponse(res);
+  } catch (err) {
+    console.warn('[API] ETA model health unavailable:', err.message);
+    return { status: 'unavailable', model_loaded: false, error: err.message };
+  }
+}
+
+export async function fetchTaskETA(taskId) {
+  if (!taskId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/tasks/${encodeURIComponent(taskId)}/eta`, { signal: AbortSignal.timeout(6000) });
+    return await handleResponse(res);
+  } catch (err) {
+    console.warn('[API] ETA prediction unavailable:', err.message);
+    return null;
+  }
+}

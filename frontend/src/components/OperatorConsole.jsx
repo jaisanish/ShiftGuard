@@ -44,6 +44,8 @@ export default function OperatorConsole() {
     refreshData,
     anomalyInsight,
     anomalyModelHealth,
+    etaPrediction,
+    etaModelHealth,
   } = useRealtime();
 
   const [activeTab, setActiveTab] = useState('cockpit'); // cockpit | safety | incidents | insights | coach
@@ -190,6 +192,8 @@ export default function OperatorConsole() {
             <CurrentTask
               task={currentTask || {}}
               telemetry={telemetry || {}}
+              etaPrediction={etaPrediction}
+              etaModelHealth={etaModelHealth}
             />
 
             {/* Primary Machinery Telemetry Metric Cluster & Trend Sparklines */}
@@ -205,6 +209,8 @@ export default function OperatorConsole() {
               <TaskPanel
                 currentTask={currentTask || {}}
                 upcomingTask={upcomingTask}
+                etaPrediction={etaPrediction}
+                etaModelHealth={etaModelHealth}
               />
             </div>
 

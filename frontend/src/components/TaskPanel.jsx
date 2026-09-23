@@ -11,6 +11,7 @@ import { ClipboardList, ArrowRight, Clock, Award, ShieldAlert, Cpu } from 'lucid
 export default function TaskPanel({
   currentTask = {},
   upcomingTask = null,
+  etaPrediction = null,
 }) {
   const plannedTime = currentTask.estimated_time_min !== undefined ? currentTask.estimated_time_min : 55.0;
 
@@ -49,12 +50,12 @@ export default function TaskPanel({
             PREDICTED COMPLETION
           </span>
           <div className="flex items-baseline gap-1.5">
-            <span className="mono-value text-sm sm:text-base font-bold text-amber-300">
-              MODEL PENDING
+            <span className={`mono-value text-sm sm:text-base font-bold ${etaPrediction ? 'text-emerald-300' : 'text-amber-300'}`}>
+              {etaPrediction ? `${etaPrediction.predicted_minutes} MIN` : 'PREDICTION UNAVAILABLE'}
             </span>
           </div>
           <span className="text-[10px] font-mono text-zinc-400 mt-1 block leading-tight">
-              Phase 7 ETA pipeline required
+              {etaPrediction ? `${etaPrediction.delta_vs_plan_minutes >= 0 ? '+' : ''}${etaPrediction.delta_vs_plan_minutes}m vs plan${etaPrediction.why_changed?.length ? ` · ${etaPrediction.why_changed[0]}` : ''}` : 'ETA model not connected'}
           </span>
         </div>
 

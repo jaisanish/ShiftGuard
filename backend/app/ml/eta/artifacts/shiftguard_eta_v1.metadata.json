@@ -1,0 +1,39 @@
+{
+  "model_version": "eta-gbr-v1.0.0",
+  "model_type": "GradientBoostingRegressor",
+  "features_version": "eta-features-v1",
+  "feature_schema": [
+    "task_type",
+    "weather",
+    "operator_skill",
+    "working_condition",
+    "machine_age_years",
+    "estimated_time_min",
+    "elapsed_minutes",
+    "load_cycles_delta",
+    "idle_minutes_delta",
+    "fuel_used_delta_l",
+    "live_context_available"
+  ],
+  "trained_at": "2026-09-23T21:07:52.914934Z",
+  "dataset_version": "synthetic-tasks-v1",
+  "task_dataset_sha256": "eaec318327825322b2a23b1e7acd179152a94ca073876c4322fa28df5cea53a8",
+  "telemetry_dataset_sha256": "f2f1be0a43f7930a4ef3ed55ebdb7e4c11f42d6dc50156892d07868fec09d8fd",
+  "training_rows": 120,
+  "validation_rows": 30,
+  "split": "chronological 80/20 by planned_start",
+  "metrics": {
+    "mae": 4.677122468657818,
+    "rmse": 5.845780795415194,
+    "r2": 0.9557409308906726,
+    "planned_baseline_mae": 23.410000000000007
+  },
+  "uncertainty": {
+    "method": "90th percentile absolute validation residual",
+    "residual_q90_minutes": 8.125979199099305
+  },
+  "limitations": [
+    "Training data and validation labels are synthetic.",
+    "Metrics do not establish real-world accuracy."
+  ]
+}

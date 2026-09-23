@@ -38,6 +38,10 @@ backend/app/ml/anomaly/artifacts/*.joblib
 !backend/app/ml/anomaly/artifacts/shiftguard_anomaly_v1.joblib
 backend/app/ml/anomaly/artifacts/*.metadata.json
 !backend/app/ml/anomaly/artifacts/shiftguard_anomaly_v1.metadata.json
+backend/app/ml/eta/artifacts/*.joblib
+!backend/app/ml/eta/artifacts/shiftguard_eta_v1.joblib
+backend/app/ml/eta/artifacts/*.metadata.json
+!backend/app/ml/eta/artifacts/shiftguard_eta_v1.metadata.json
 
 # Logs
 *.log

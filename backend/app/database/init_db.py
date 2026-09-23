@@ -30,6 +30,7 @@ def init_tables(target_engine=None):
     eng = target_engine or engine
     Base.metadata.create_all(bind=eng)
     _migrate_phase6_anomaly_columns(eng)
+    _migrate_phase7_eta_columns(eng)
 
 
 def _migrate_phase6_anomaly_columns(target_engine) -> None:
@@ -63,6 +64,29 @@ def _migrate_phase6_anomaly_columns(target_engine) -> None:
             "CREATE INDEX IF NOT EXISTS ix_anomalies_machine_type "
             "ON anomalies (machine_id, anomaly_type)"
         ))
+
+
+def _migrate_phase7_eta_columns(target_engine) -> None:
+    """Non-destructively extend legacy ETA records with Phase 7 explainability."""
+    if target_engine.dialect.name != "sqlite":
+        return
+    inspector = inspect(target_engine)
+    if "eta_predictions" not in inspector.get_table_names():
+        return
+    existing = {column["name"] for column in inspector.get_columns("eta_predictions")}
+    additions = {
+        "operator_id": "VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN'",
+        "planned_minutes": "FLOAT", "predicted_minutes": "FLOAT",
+        "predicted_remaining_minutes": "FLOAT", "p50": "FLOAT", "p90": "FLOAT",
+        "interval_lower": "FLOAT", "interval_upper": "FLOAT", "uncertainty_minutes": "FLOAT",
+        "delta_vs_plan_minutes": "FLOAT", "why_changed": "TEXT NOT NULL DEFAULT '[]'",
+        "features_version": "VARCHAR(64)", "model_version": "VARCHAR(64)",
+    }
+    with target_engine.begin() as connection:
+        for column, definition in additions.items():
+            if column not in existing:
+                connection.execute(text(f"ALTER TABLE eta_predictions ADD COLUMN {column} {definition}"))
+        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_eta_predictions_task_model ON eta_predictions (task_id, model_version)"))
 
 
 def seed_tasks(db: Session, tasks_csv: Path) -> int:

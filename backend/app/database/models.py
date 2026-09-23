@@ -199,10 +199,23 @@ class EtaPredictionModel(Base):
     id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
     task_id = Column(String(64), ForeignKey("tasks.task_id"), nullable=False, index=True)
     machine_id = Column(String(64), nullable=False, index=True)
+    operator_id = Column(String(64), nullable=False, default="UNKNOWN", index=True)
     predicted_eta_min = Column(Float, nullable=False)
     confidence_score = Column(Float, nullable=False)
     feature_snapshot = Column(Text, nullable=True)  # JSON payload of input features
     prediction_timestamp = Column(String(64), nullable=False, default=utc_now_iso, index=True)
+    planned_minutes = Column(Float, nullable=True)
+    predicted_minutes = Column(Float, nullable=True)
+    predicted_remaining_minutes = Column(Float, nullable=True)
+    p50 = Column(Float, nullable=True)
+    p90 = Column(Float, nullable=True)
+    interval_lower = Column(Float, nullable=True)
+    interval_upper = Column(Float, nullable=True)
+    uncertainty_minutes = Column(Float, nullable=True)
+    delta_vs_plan_minutes = Column(Float, nullable=True)
+    why_changed = Column(Text, nullable=False, default="[]")
+    features_version = Column(String(64), nullable=True)
+    model_version = Column(String(64), nullable=True, index=True)
 
 
 # ============================================================================

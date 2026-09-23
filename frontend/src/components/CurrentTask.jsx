@@ -12,6 +12,8 @@ import { Target, Timer, Compass, CloudRain, Mountain, ShieldAlert } from 'lucide
 export default function CurrentTask({
   task = {},
   telemetry = {},
+  etaPrediction = null,
+  etaModelHealth = {},
 }) {
   const taskName = task.task_type
     ? task.task_type.replace(/_/g, ' ')
@@ -77,12 +79,12 @@ export default function CurrentTask({
               PREDICTED COMPLETION ETA
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="mono-value text-xl sm:text-2xl font-bold tracking-tight px-2.5 py-1 rounded-xs bg-amber-500/10 border border-amber-500/30 text-amber-300">
-                MODEL PENDING
+              <span className={`mono-value text-xl sm:text-2xl font-bold tracking-tight px-2.5 py-1 rounded-xs border ${etaPrediction ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'}`}>
+                {etaPrediction ? `${etaPrediction.predicted_remaining_minutes} MIN REMAINING` : etaModelHealth?.status === 'loading' ? 'LOADING MODEL' : 'PREDICTION UNAVAILABLE'}
               </span>
             </div>
             <p className="text-[10px] font-mono text-zinc-400 leading-tight">
-              Baseline planned: <strong className="text-zinc-300">{plannedMin}m</strong>. Predicted completion times require the ETA model pipeline (Phase 7).
+              {etaPrediction ? <>Planned: <strong className="text-zinc-300">{plannedMin}m</strong> · total estimate <strong className="text-zinc-300">{etaPrediction.predicted_minutes}m</strong> · 90% band {etaPrediction.interval_lower}–{etaPrediction.interval_upper}m.</> : <>Baseline planned: <strong className="text-zinc-300">{plannedMin}m</strong>. ETA model is unavailable.</>}
             </p>
           </div>
 

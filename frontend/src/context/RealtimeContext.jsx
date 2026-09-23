@@ -13,6 +13,8 @@ import {
   createTelemetryWebSocket,
   fetchAnomalyModelHealth,
   fetchLatestAnomalyInference,
+  fetchETAModelHealth,
+  fetchTaskETA,
 } from '../services/api';
 
 const RealtimeContext = createContext(null);
@@ -67,6 +69,8 @@ export function RealtimeProvider({ children }) {
     model_loaded: false,
     feature_schema: [],
   });
+  const [etaPrediction, setEtaPrediction] = useState(null);
+  const [etaModelHealth, setEtaModelHealth] = useState({ status: 'loading', model_loaded: false });
 
   const wsClientRef = useRef(null);
 
@@ -112,6 +116,9 @@ export function RealtimeProvider({ children }) {
       if (tasksData && tasksData.length > 0) {
         setCurrentTask(tasksData[0]);
         setUpcomingTask(tasksData.length > 1 ? tasksData[1] : null);
+        const etaHealth = await fetchETAModelHealth();
+        setEtaModelHealth(etaHealth);
+        setEtaPrediction(etaHealth?.model_loaded ? await fetchTaskETA(tasksData[0].task_id) : null);
       }
 
       // 5. Safety status snapshot
@@ -414,6 +421,8 @@ export function RealtimeProvider({ children }) {
     // Advisory Analytics
     anomalyInsight,
     anomalyModelHealth,
+    etaPrediction,
+    etaModelHealth,
   };
 
   return (

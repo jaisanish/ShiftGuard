@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     ANOMALY_ARTIFACT_PATH: str = "backend/app/ml/anomaly/artifacts/shiftguard_anomaly_v1.joblib"
     ANOMALY_METADATA_PATH: str = "backend/app/ml/anomaly/artifacts/shiftguard_anomaly_v1.metadata.json"
     ANOMALY_MIN_OPERATOR_WINDOWS: int = 6
+    ETA_ARTIFACT_PATH: str = "backend/app/ml/eta/artifacts/shiftguard_eta_v1.joblib"
+    ETA_METADATA_PATH: str = "backend/app/ml/eta/artifacts/shiftguard_eta_v1.metadata.json"
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
