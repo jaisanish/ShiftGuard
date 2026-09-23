@@ -21,6 +21,7 @@ from backend.app.api.cloud_history import router as cloud_history_router
 from backend.app.api.simulator import router as simulator_router
 from backend.app.api.anomalies import router as anomalies_router
 from backend.app.api.eta import router as eta_router
+from backend.app.api.copilot import router as copilot_router
 from backend.app.edge.telemetry_ws import router as edge_ws_router
 
 
@@ -57,7 +58,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="ShiftGuard Edge API",
     description="Smart Operator Assistant for CAT Machinery — Edge, Cloud and Advisory Analytics",
-    version="2.7.0",
+    version="2.8.0",
     lifespan=lifespan,
 )
 
@@ -88,6 +89,7 @@ app.include_router(cloud_history_router)
 app.include_router(simulator_router)
 app.include_router(anomalies_router)
 app.include_router(eta_router)
+app.include_router(copilot_router)
 
 
 @app.get("/", tags=["Root"])
@@ -95,8 +97,8 @@ def root():
     """Root metadata endpoint."""
     return {
         "service": settings.SERVICE_NAME,
-        "version": "2.7.0",
-        "phase": 7,
+        "version": "2.8.0",
+        "phase": 8,
         "status": "operational",
         "docs_url": "/docs",
         "health_url": "/health",

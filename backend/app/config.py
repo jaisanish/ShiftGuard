@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     ANOMALY_MIN_OPERATOR_WINDOWS: int = 6
     ETA_ARTIFACT_PATH: str = "backend/app/ml/eta/artifacts/shiftguard_eta_v1.joblib"
     ETA_METADATA_PATH: str = "backend/app/ml/eta/artifacts/shiftguard_eta_v1.metadata.json"
+    COPILOT_PROVIDER: str = "local"
+    OPENAI_API_KEY: str | None = None
+    OPENAI_MODEL: str = "gpt-4.1-mini"
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

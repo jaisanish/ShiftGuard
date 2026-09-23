@@ -493,3 +493,12 @@ export async function fetchTaskETA(taskId) {
     return null;
   }
 }
+
+/** Phase 8: advisory copilot query; it never controls deterministic safety. */
+export async function askCopilot(query, context = {}) {
+  const res = await fetch(`${API_BASE}/api/copilot/query`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, context }), signal: AbortSignal.timeout(10000),
+  });
+  return handleResponse(res);
+}

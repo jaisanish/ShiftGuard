@@ -1,118 +1,37 @@
-import React, { useState } from 'react';
-import { Mic, Send, Sparkles } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Mic, Send, Sparkles, Volume2 } from 'lucide-react';
+import { askCopilot } from '../services/api';
+import { useRealtime } from '../context/RealtimeContext';
 
-/**
- * CopilotEntry
- * Compact in-cab voice & text assistant entry point on the Command Center console.
- * Strictly non-chatty, operator-focused interaction shortcut.
- */
 export default function CopilotEntry() {
+  const { telemetry, currentTask, upcomingTask, etaPrediction } = useRealtime();
   const [query, setQuery] = useState('');
-  const [feedback, setFeedback] = useState(null);
+  const [response, setResponse] = useState(null);
   const [isListening, setIsListening] = useState(false);
-
-  const handleSubmit = (e) => {
-    e?.preventDefault();
-    if (!query.trim()) return;
-
-    const q = query.trim().toLowerCase();
-    if (q.includes('next task')) {
-      setFeedback('Next queued assignment: ORE HAULING & DUMP (Scheduled in 15m).');
-    } else if (q.includes('status') || q.includes('operating')) {
-      setFeedback('Machine operational state nominal. All edge safety interlocks active.');
-    } else {
-      setFeedback(`Query received: "${query}". Co-Pilot diagnostic subsystem is on STANDBY.`);
-    }
-    setQuery('');
+  const recognitionRef = useRef(null);
+  const submit = async (event, suppliedQuery = null) => {
+    event?.preventDefault(); const question = (suppliedQuery || query).trim(); if (!question) return;
+    setResponse({ answer: 'Checking edge context…', loading: true });
+    try {
+      const result = await askCopilot(question, { telemetry, task: currentTask, upcoming_task: upcomingTask, eta: etaPrediction });
+      setResponse(result); setQuery('');
+    } catch (error) { setResponse({ answer: `Copilot unavailable: ${error.message}`, error: true }); }
   };
-
-  const handleMicClick = () => {
-    setIsListening(true);
-    setFeedback('Listening for in-cab voice query...');
-    setTimeout(() => {
-      setIsListening(false);
-      setFeedback('Voice query: "What\'s my next task?" -> Next queued: ORE HAULING & DUMP.');
-    }, 2000);
+  const speak = (text) => { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); } };
+  const listen = () => {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) { setResponse({ answer: 'Voice recognition is not supported in this browser. Type your question instead.', error: true }); return; }
+    const recognition = new Recognition(); recognition.lang = 'en-US'; recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true); recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setResponse({ answer: 'Voice capture failed. Please try again or type your question.', error: true });
+    recognition.onresult = (event) => { const spoken = event.results[0][0].transcript; setQuery(spoken); submit(null, spoken); };
+    recognitionRef.current = recognition; recognition.start();
   };
-
-  return (
-    <div className="glass-panel hud-corner p-4 rounded-sm space-y-3 font-mono">
-      <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 text-xs">
-        <div className="flex items-center gap-2 font-bold uppercase text-zinc-200">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          <span>ASK SHIFTGUARD</span>
-        </div>
-        <span className="text-[10px] text-zinc-400">
-          IN-CAB VOICE & QUERY ENTRY
-        </span>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <button
-          onClick={handleMicClick}
-          className={`px-3 py-2 rounded-xs border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-            isListening
-              ? 'bg-rose-600/30 border-rose-500 text-rose-300 animate-pulse'
-              : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25'
-          }`}
-          title="Activate cab microphone"
-        >
-          <Mic className={`w-3.5 h-3.5 ${isListening ? 'animate-bounce' : ''}`} />
-          <span>{isListening ? 'LISTENING...' : 'VOICE'}</span>
-        </button>
-
-        <form onSubmit={handleSubmit} className="flex-1 flex items-center gap-1.5 min-w-0">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder='Ask: "What&apos;s my next task?" or "Check proximity clearance"'
-            className="flex-1 bg-[#12151e] border border-white/[0.08] px-3 py-2 rounded-xs text-xs text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-emerald-500/50"
-          />
-          <button
-            type="submit"
-            disabled={!query.trim()}
-            className="px-3 py-2 rounded-xs bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 border border-white/[0.08] transition-colors cursor-pointer text-xs"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </button>
-        </form>
-      </div>
-
-      {/* Suggested Quick Queries */}
-      <div className="flex flex-wrap items-center gap-2 text-[11px]">
-        <span className="text-zinc-500">QUICK:</span>
-        <button
-          onClick={() => {
-            setQuery("What's my next task?");
-            setFeedback('Next queued assignment: ORE HAULING & DUMP (Auto-dispatched).');
-          }}
-          className="px-2 py-0.5 rounded-xs bg-white/[0.03] hover:bg-white/[0.08] text-zinc-300 border border-white/[0.05] transition-colors cursor-pointer"
-        >
-          &quot;What&apos;s my next task?&quot;
-        </button>
-        <button
-          onClick={() => {
-            setQuery("Check machine health");
-            setFeedback('Engine RPM nominal. Hydraulic temperature within operating envelope.');
-          }}
-          className="px-2 py-0.5 rounded-xs bg-white/[0.03] hover:bg-white/[0.08] text-zinc-300 border border-white/[0.05] transition-colors cursor-pointer"
-        >
-          &quot;Check machine health&quot;
-        </button>
-      </div>
-
-      {feedback && (
-        <div className="p-2.5 rounded-xs bg-[#121620] border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between gap-2">
-          <span>{feedback}</span>
-          <button
-            onClick={() => setFeedback(null)}
-            className="text-zinc-400 hover:text-zinc-200 cursor-pointer"
-          >
-            &times;
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="glass-panel hud-corner p-4 rounded-sm space-y-3 font-mono">
+    <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 text-xs"><div className="flex items-center gap-2 font-bold uppercase text-zinc-200"><Sparkles className="w-3.5 h-3.5 text-emerald-400" />ASK SHIFTGUARD</div><span className="text-[10px] text-zinc-400">ADVISORY VOICE + RAG</span></div>
+    <div className="flex gap-2"><button onClick={listen} className={`px-3 py-2 rounded-xs border text-xs font-bold ${isListening ? 'bg-rose-600/30 border-rose-500 text-rose-300 animate-pulse' : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'}`}><Mic className="w-3.5 h-3.5 inline mr-1" />{isListening ? 'LISTENING' : 'VOICE'}</button><form onSubmit={submit} className="flex-1 flex gap-1.5"><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ask about ETA, health, task, or safety" className="flex-1 bg-[#12151e] border border-white/[0.08] px-3 py-2 rounded-xs text-xs" /><button disabled={!query.trim()} className="px-3 py-2 rounded-xs bg-zinc-800 disabled:opacity-40"><Send className="w-3.5 h-3.5" /></button></form></div>
+    <div className="flex flex-wrap gap-2 text-[11px]"><button onClick={() => submit(null, "What's my next task?")}>NEXT TASK</button><button onClick={() => submit(null, 'What is my ETA?')}>ETA</button><button onClick={() => submit(null, 'Check machine health')}>HEALTH</button><button onClick={() => submit(null, 'What should I do about proximity safety?')}>SAFETY</button></div>
+    {response && <div className={`p-2.5 rounded-xs border text-xs flex gap-2 ${response.error ? 'border-rose-500/30 text-rose-300' : 'border-emerald-500/30 text-emerald-300'}`}><span className="flex-1">{response.answer}</span>{!response.loading && !response.error && <button onClick={() => speak(response.answer)} title="Read response aloud"><Volume2 className="w-4 h-4" /></button>}</div>}
+    <p className="text-[10px] text-zinc-500">Advisory only — edge safety alerts and controls remain authoritative.</p>
+  </div>;
 }
