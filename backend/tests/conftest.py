@@ -28,6 +28,12 @@ def setup_test_database():
 
 
 @pytest.fixture
+def anyio_backend():
+    """The realtime services use asyncio primitives; do not parametrise them over Trio."""
+    return "asyncio"
+
+
+@pytest.fixture
 def db_session():
     """Provide a transactional database session for each test."""
     connection = test_engine.connect()

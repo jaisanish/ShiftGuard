@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     SYNC_RETRY_LIMIT: int = 5
     SYNC_BACKOFF_BASE: float = 2.0
     CLOUD_ENABLED: bool = True
+    ANOMALY_ARTIFACT_PATH: str = "backend/app/ml/anomaly/artifacts/shiftguard_anomaly_v1.joblib"
+    ANOMALY_METADATA_PATH: str = "backend/app/ml/anomaly/artifacts/shiftguard_anomaly_v1.metadata.json"
+    ANOMALY_MIN_OPERATOR_WINDOWS: int = 6
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

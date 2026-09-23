@@ -385,8 +385,10 @@ class ETAPredictor(ABC):
    Local deterministic rules (`SeatbeltSafetyRule`, `ProximitySafetyRule`), context buffering.
 4. **Phase 4 — Complete Realtime Operator Console**: [COMPLETED]
    Live WebSocket streaming to React cockpit with zero refresh, strict zero-fabricated ETA invariant, authoritative operating states, critical alert modal overlay, incident audit trails & physical context buffer inspection, multi-page routing.
-5. **Phase 5 — Voice & In-Cab Copilot / Manual RAG**: [UPCOMING]
-6. **Phase 6 — ML Model Pipeline Integration**: [UPCOMING]
+5. **Phase 5 — Cloud Backend & Offline Sync**: [COMPLETED]
+6. **Phase 6 — Anomaly Model Pipeline Integration**: [COMPLETED]
+7. **Phase 7 — ETA Model Pipeline Integration**: [UPCOMING]
+8. **Phase 8 — Voice & In-Cab Copilot / Manual RAG**: [UPCOMING]
 
 ---
 
@@ -438,3 +440,30 @@ class ETAPredictor(ABC):
 │                                                                                           │
 └───────────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 9. Phase 6 Advisory Analytics Architecture
+
+```text
+Telemetry history ──► 15-minute causal feature windows ──► RobustScaler
+                                                              │
+                                                              ▼
+                                                       Isolation Forest
+                                                              │
+                         operator baseline / global fallback ◄─┤
+                                                              ▼
+                                                score + evidence + type
+                                                              │
+                                ┌─────────────────────────────┴──────────────┐
+                                ▼                                            ▼
+                        SQLite anomalies                              React Insights
+                                │
+                                ▼
+                        Sync Outbox (ANOMALY)
+                                │
+                                ▼
+                      Cloud anomaly history API
+```
+
+Phase 6 is downstream analytics only. `EdgeSafetyEngine` never imports the anomaly package, never waits for inference, and never uses an anomaly result to determine severity. Missing or invalid model artifacts degrade only the Insights surfaces.

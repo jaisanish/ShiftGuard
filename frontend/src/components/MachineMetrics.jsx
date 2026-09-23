@@ -10,12 +10,7 @@ import { useRealtime } from '../context/RealtimeContext';
  * Integrates rolling SVG sparklines (last 30-50 points) for RPM, Load, Speed, and Proximity.
  */
 export default function MachineMetrics({ telemetry: propTelemetry }) {
-  let contextData = {};
-  try {
-    contextData = useRealtime();
-  } catch (e) {
-    // Graceful fallback if rendered outside provider
-  }
+  const contextData = useRealtime();
 
   const telemetry = propTelemetry || contextData.telemetry || {};
   const history = contextData.telemetryHistory || [];

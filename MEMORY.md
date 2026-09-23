@@ -367,7 +367,7 @@ Standardized log prefixes trace the entire event lifecycle:
 
 #### 11.2 Invariant Enforcement: Zero Fabricated Predicted ETA
 - **Strict Invariant**: The operator console **never** fabricates an estimated time of completion using hardcoded multipliers.
-- **Display Status**: `MODEL PENDING` or `ETA MODEL NOT CONNECTED` prominently rendered with explanatory notice that ML model pipelines (Phase 6) are required.
+- **Display Status**: `MODEL PENDING` or `ETA MODEL NOT CONNECTED` prominently rendered with explanatory notice that the ETA model pipeline (Phase 7) is required.
 
 #### 11.3 Authoritative Operating State
 - Direct reflection of backend canonicalized state (`IDLE`, `WORKING`, `TRAVELLING`, `STOPPED`).
@@ -392,3 +392,15 @@ Standardized log prefixes trace the entire event lifecycle:
 - Compact `ASK SHIFTGUARD` voice/text in-cab query entry (`CopilotEntry.jsx`).
 - System integrity indicators: `EDGE COMPUTE: ACTIVE`, `SAFETY ENGINE: LOCAL`, `WEBSOCKET: CONNECTED`, `CLOUD: DISCONNECTED`, `SYNC: 0 PENDING`.
 
+---
+
+### 12. Phase 6 — Advisory Anomaly Analytics
+
+- **Model**: `IsolationForest`, version `anomaly-iforest-v1.0.0`, 250 estimators, contamination 0.08, deterministic seed 42.
+- **Training boundary**: `scripts/train_anomaly.py` performs offline training; application startup only loads a trusted versioned artifact.
+- **Features**: `idle_ratio`, `fuel_per_load_cycle`, `load_cycles_per_hour`, `fuel_per_active_hour`, `safety_alert_rate`, `seatbelt_violation_rate` over fixed 15-minute causal windows.
+- **Baseline**: operator-specific mean/median/std after six windows; otherwise explicit fleet-wide fallback.
+- **Persistence**: unusual results are written to local `anomalies`, enqueued after local persistence as `ANOMALY`, and synchronized idempotently to `cloud_anomalies`.
+- **UI**: compact advisory card in Command Center plus a dedicated Insights surface; actual inference values only.
+- **Failure invariant**: artifact/model failures produce `ANALYTICS UNAVAILABLE` and cannot affect telemetry, safety, alerts, incidents, or offline operation.
+- **Validation limitation**: synthetic controlled evaluation detects 6/7 expected scenarios; amber proximity warning remains below anomaly threshold and is still handled deterministically by edge safety.

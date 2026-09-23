@@ -42,13 +42,47 @@ class SyncWorker:
             return self.cloud_override_enabled
         return settings.CLOUD_ENABLED
 
-    async def sync_once(self) -> Dict[str, Any]:
+    @staticmethod
+    async def _post_batch(payload_events: List[Dict[str, Any]]):
+        """Send to a remote cloud API, or use the in-process cloud service for local deployment."""
+        local_urls = (
+            "http://127.0.0.1:8000/api/sync/events",
+            "http://localhost:8000/api/sync/events",
+        )
+        if settings.CLOUD_SYNC_URL in local_urls:
+            from backend.app.cloud.cloud_db import CloudSessionLocal
+            from backend.app.cloud.sync_service import CloudSyncService
+
+            cloud_db = CloudSessionLocal()
+            try:
+                data = CloudSyncService.ingest_batch(cloud_db, payload_events)
+            finally:
+                cloud_db.close()
+
+            class LocalResponse:
+                status_code = 200
+                text = ""
+
+                @staticmethod
+                def json():
+                    return data
+
+            return LocalResponse()
+
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            return await client.post(
+                settings.CLOUD_SYNC_URL,
+                json={"events": payload_events},
+            )
+
+    async def sync_once(self, db: Optional[Session] = None) -> Dict[str, Any]:
         """
         Execute a single batch synchronization cycle.
         Returns a dictionary summarizing the sync cycle results.
         """
         start_time = time.monotonic()
-        db: Session = SessionLocal()
+        owns_session = db is None
+        db = db or SessionLocal()
         try:
             # 1. Check if cloud is configured and enabled
             if not self.is_cloud_effectively_enabled():
@@ -99,11 +133,7 @@ class SyncWorker:
             # 5. Transmit batch to Cloud Sync API
             logger.info(f"[SYNC] Sent {len(payload_events)} events to {settings.CLOUD_SYNC_URL}")
             try:
-                async with httpx.AsyncClient(timeout=8.0) as client:
-                    resp = await client.post(
-                        settings.CLOUD_SYNC_URL,
-                        json={"events": payload_events},
-                    )
+                resp = await self._post_batch(payload_events)
 
                 if resp.status_code == 200:
                     data = resp.json()
@@ -171,7 +201,8 @@ class SyncWorker:
                 }
         finally:
             self.is_syncing = False
-            db.close()
+            if owns_session:
+                db.close()
 
     async def _run_loop(self):
         """Continuous background synchronization loop."""

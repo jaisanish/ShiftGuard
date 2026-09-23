@@ -73,4 +73,21 @@ Specialized deterministic time-series sequences crafted for hackathon presentati
   4. **Proximity Critical** (Rows 23–28): Obstacle distance collapsing to 2.8m, initiating emergency deceleration to 0 km/h (`PRX-CRIT-STOP`).
   5. **Excessive Idle** (Rows 29–36): CAT-994K idling in staging bay with `idling_time_min` accumulating from 24.5 to 35.0 min (`IDL-EXCESS-WARN`).
   6. **Repeated Safety Behavior** (Rows 37–44): Operator unbuckling while in motion followed by proximity violation within a 2-minute span (`PRX-CRIT-MULTI`, `SEC-SAFETY-STANDDOWN`).
-  7. **Delayed Task** (Rows 45–52): Haul truck throttled to 6.8 km/h on steep muddy grade with 95.5% engine load and 98.4°C coolant (`TSK-DELAY-TRACTION`).
+7. **Delayed Task** (Rows 45–52): Haul truck throttled to 6.8 km/h on steep muddy grade with 95.5% engine load and 98.4°C coolant (`TSK-DELAY-TRACTION`).
+
+---
+
+## 4. Phase 6 Anomaly Feature Dataset
+
+The Isolation Forest consumes leakage-free, fixed 15-minute windows derived from telemetry available at or before each window end. These are model features, not raw dataset columns.
+
+| Feature | Definition | Units |
+|---|---|---|
+| `idle_ratio` | Fraction of samples whose operating state is `IDLE` | 0–1 ratio |
+| `fuel_per_load_cycle` | Non-negative fuel counter delta divided by completed-cycle delta (minimum denominator 1) | L/cycle |
+| `load_cycles_per_hour` | Completed-cycle delta divided by observed window hours | cycles/hour |
+| `fuel_per_active_hour` | Fuel delta divided by observed non-idle/non-stopped hours | L/hour |
+| `safety_alert_rate` | Fraction of samples containing seatbelt motion violation, proximity below 15 m, or `SEC-/PRX-` code | 0–1 ratio |
+| `seatbelt_violation_rate` | Fraction of samples with unfastened belt while speed exceeds 0.5 km/h | 0–1 ratio |
+
+Counters are differenced only inside the current window. Future samples never affect an earlier window. Missing/non-numeric inputs fail validation rather than being silently imputed.

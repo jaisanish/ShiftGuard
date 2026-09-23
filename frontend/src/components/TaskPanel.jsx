@@ -54,7 +54,7 @@ export default function TaskPanel({
             </span>
           </div>
           <span className="text-[10px] font-mono text-zinc-400 mt-1 block leading-tight">
-            Phase 6 ML pipeline required
+              Phase 7 ETA pipeline required
           </span>
         </div>
 

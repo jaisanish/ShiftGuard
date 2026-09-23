@@ -9,7 +9,7 @@ import argparse
 import csv
 from pathlib import Path
 from typing import Optional
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select, text
 from sqlalchemy.orm import Session
 
 from backend.app.database.connection import Base, engine, SessionLocal
@@ -29,6 +29,40 @@ def init_tables(target_engine=None):
     """Create all database tables if they do not exist."""
     eng = target_engine or engine
     Base.metadata.create_all(bind=eng)
+    _migrate_phase6_anomaly_columns(eng)
+
+
+def _migrate_phase6_anomaly_columns(target_engine) -> None:
+    """Add Phase 6 columns to an existing local SQLite database without data loss."""
+    if target_engine.dialect.name != "sqlite":
+        return
+    inspector = inspect(target_engine)
+    if "anomalies" not in inspector.get_table_names():
+        return
+    existing = {column["name"] for column in inspector.get_columns("anomalies")}
+    additions = {
+        "operator_id": "VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN'",
+        "window_start": "VARCHAR(64) NOT NULL DEFAULT ''",
+        "window_end": "VARCHAR(64) NOT NULL DEFAULT ''",
+        "anomaly_type": "VARCHAR(64) NOT NULL DEFAULT 'UNUSUAL_OPERATION'",
+        "current_value": "FLOAT",
+        "baseline_value": "FLOAT",
+        "evidence": "TEXT NOT NULL DEFAULT '[]'",
+        "baseline_source": "VARCHAR(32) NOT NULL DEFAULT 'GLOBAL_FALLBACK'",
+        "created_at": "VARCHAR(64) NOT NULL DEFAULT ''",
+    }
+    with target_engine.begin() as connection:
+        for column, definition in additions.items():
+            if column not in existing:
+                connection.execute(text(f"ALTER TABLE anomalies ADD COLUMN {column} {definition}"))
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_anomalies_operator_time "
+            "ON anomalies (operator_id, window_end)"
+        ))
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_anomalies_machine_type "
+            "ON anomalies (machine_id, anomaly_type)"
+        ))
 
 
 def seed_tasks(db: Session, tasks_csv: Path) -> int:

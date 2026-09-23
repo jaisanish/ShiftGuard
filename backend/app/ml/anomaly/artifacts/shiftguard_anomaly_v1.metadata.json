@@ -1,0 +1,94 @@
+{
+  "model_version": "anomaly-iforest-v1.0.0",
+  "model_type": "IsolationForest",
+  "trained_at": "2026-09-23T20:48:46.700638Z",
+  "dataset_version": "synthetic-telemetry-v1",
+  "dataset_sha256": "f2f1be0a43f7930a4ef3ed55ebdb7e4c11f42d6dc50156892d07868fec09d8fd",
+  "training_rows": 3200,
+  "feature_window_count": 160,
+  "feature_schema": [
+    "idle_ratio",
+    "fuel_per_load_cycle",
+    "load_cycles_per_hour",
+    "fuel_per_active_hour",
+    "safety_alert_rate",
+    "seatbelt_violation_rate"
+  ],
+  "window_minutes": 15,
+  "minimum_operator_windows": 6,
+  "hyperparameters": {
+    "n_estimators": 250,
+    "contamination": 0.08,
+    "random_state": 42,
+    "scaler": "RobustScaler"
+  },
+  "score_calibration": {
+    "normalization_low": -0.250800987307216,
+    "normalization_high": 0.08728696833289692,
+    "threshold_raw": -2.5804011705155006e-17
+  },
+  "diagnostics": {
+    "available": true,
+    "label_scope": "Synthetic controlled-scenario evaluation only",
+    "scenario_count": 7,
+    "accuracy": 0.8571428571428571,
+    "recall": 0.8333333333333334,
+    "precision": 1.0,
+    "scenarios": [
+      {
+        "scenario": "normal",
+        "synthetic_expected_anomaly": false,
+        "predicted_anomaly": false,
+        "anomaly_score": 0.65929,
+        "correct": true
+      },
+      {
+        "scenario": "seatbelt_violation",
+        "synthetic_expected_anomaly": true,
+        "predicted_anomaly": true,
+        "anomaly_score": 0.936285,
+        "correct": true
+      },
+      {
+        "scenario": "proximity_warning",
+        "synthetic_expected_anomaly": true,
+        "predicted_anomaly": false,
+        "anomaly_score": 0.579447,
+        "correct": false
+      },
+      {
+        "scenario": "proximity_critical",
+        "synthetic_expected_anomaly": true,
+        "predicted_anomaly": true,
+        "anomaly_score": 0.914979,
+        "correct": true
+      },
+      {
+        "scenario": "excessive_idle",
+        "synthetic_expected_anomaly": true,
+        "predicted_anomaly": true,
+        "anomaly_score": 1.0,
+        "correct": true
+      },
+      {
+        "scenario": "repeated_safety",
+        "synthetic_expected_anomaly": true,
+        "predicted_anomaly": true,
+        "anomaly_score": 1.0,
+        "correct": true
+      },
+      {
+        "scenario": "high_fuel_usage",
+        "synthetic_expected_anomaly": true,
+        "predicted_anomaly": true,
+        "anomaly_score": 0.845786,
+        "correct": true
+      }
+    ]
+  },
+  "limitations": [
+    "Training and evaluation data are synthetic.",
+    "Diagnostics do not establish real-world generalization or safety performance.",
+    "The model provides advisory analytics and never controls edge safety decisions."
+  ]
+}

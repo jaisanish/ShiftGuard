@@ -6,7 +6,7 @@ import { Target, Timer, Compass, CloudRain, Mountain, ShieldAlert } from 'lucide
  * Hero operation display presenting the active assignment, ML ETA status, and direct operating state.
  * 
  * INVARIANT: Predicted ETA is NOT fabricated. Displays MODEL PENDING / ETA MODEL NOT CONNECTED
- * until Phase 6 ML model integration.
+ * until Phase 7 ETA model integration.
  * Operating State is authoritative from backend telemetry (IDLE, WORKING, TRAVELLING, STOPPED).
  */
 export default function CurrentTask({
@@ -82,7 +82,7 @@ export default function CurrentTask({
               </span>
             </div>
             <p className="text-[10px] font-mono text-zinc-400 leading-tight">
-              Baseline planned: <strong className="text-zinc-300">{plannedMin}m</strong>. Predicted completion times require ML model pipeline (Phase 6).
+              Baseline planned: <strong className="text-zinc-300">{plannedMin}m</strong>. Predicted completion times require the ETA model pipeline (Phase 7).
             </p>
           </div>
 

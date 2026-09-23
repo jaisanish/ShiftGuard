@@ -8,15 +8,11 @@ import { useRealtime } from '../context/RealtimeContext';
  * Proves the offline-first edge architecture is real and functioning.
  */
 export default function SystemStatus({ edgeConnected: propEdgeConnected }) {
-  let contextData = {};
-  try {
-    contextData = useRealtime();
-  } catch (e) {
-    // Graceful fallback
-  }
+  const contextData = useRealtime();
 
   const edgeConnected = propEdgeConnected !== undefined ? propEdgeConnected : (contextData.edgeConnected ?? true);
   const wsConnected = contextData.wsConnected ?? false;
+  const anomalyModelHealth = contextData.anomalyModelHealth ?? { status: 'unavailable', model_loaded: false };
 
   return (
     <div className="glass-panel hud-corner p-5 rounded-sm space-y-4">
@@ -142,8 +138,12 @@ export default function SystemStatus({ edgeConnected: propEdgeConnected }) {
                 <span className="text-zinc-400 text-[10px]">Sensor Prediction (Ph6)</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-xs bg-zinc-800 text-zinc-400 border border-zinc-700/50">
-              STANDBY
+            <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-xs border ${
+              anomalyModelHealth.model_loaded
+                ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30'
+                : 'bg-zinc-800 text-zinc-400 border-zinc-700/50'
+            }`}>
+              {anomalyModelHealth.model_loaded ? 'READY' : 'UNAVAILABLE'}
             </span>
           </div>
 

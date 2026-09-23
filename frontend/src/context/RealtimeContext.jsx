@@ -11,6 +11,8 @@ import {
   acknowledgeAlert as apiAcknowledgeAlert,
   acknowledgeIncident as apiAcknowledgeIncident,
   createTelemetryWebSocket,
+  fetchAnomalyModelHealth,
+  fetchLatestAnomalyInference,
 } from '../services/api';
 
 const RealtimeContext = createContext(null);
@@ -57,6 +59,14 @@ export function RealtimeProvider({ children }) {
   const [wsConnected, setWsConnected] = useState(false);
   const [edgeConnected, setEdgeConnected] = useState(true);
   const [loadingInitial, setLoadingInitial] = useState(true);
+
+  // Phase 6 Advisory Analytics (strictly independent from safety state)
+  const [anomalyInsight, setAnomalyInsight] = useState(null);
+  const [anomalyModelHealth, setAnomalyModelHealth] = useState({
+    status: 'loading',
+    model_loaded: false,
+    feature_schema: [],
+  });
 
   const wsClientRef = useRef(null);
 
@@ -127,6 +137,19 @@ export function RealtimeProvider({ children }) {
       ]);
       setAllAlerts(alertsData);
       setIncidents(incidentsData);
+
+      // 7. Advisory anomaly model health + latest genuine inference
+      const modelHealth = await fetchAnomalyModelHealth();
+      setAnomalyModelHealth(modelHealth);
+      if (modelHealth?.model_loaded && initialTelem) {
+        const insight = await fetchLatestAnomalyInference(
+          selectedMachineId,
+          initialTelem.operator_id || null
+        );
+        setAnomalyInsight(insight);
+      } else {
+        setAnomalyInsight(null);
+      }
     } catch (err) {
       console.warn('[RealtimeContext] Bootstrap error:', err);
     } finally {
@@ -387,6 +410,10 @@ export function RealtimeProvider({ children }) {
     currentTask,
     upcomingTask,
     refreshData: loadInitialData,
+
+    // Advisory Analytics
+    anomalyInsight,
+    anomalyModelHealth,
   };
 
   return (

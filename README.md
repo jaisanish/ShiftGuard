@@ -161,17 +161,37 @@ ShiftGuard/
 
 ## 6. Phase Ownership & Future Subsystems
 
-Phase 1 provides the foundational data, persistence, REST contracts, and in-cab UI. Subsequent phases are reserved for teammates:
+The active delivery sequence is:
 
 - **Phase 2**: Telemetry simulator daemon & WebSocket streaming
 - **Phase 3**: Edge safety decision engine
 - **Phase 4**: Advanced operator console integration
-- **Phase 5**: Anomaly detection ML
-- **Phase 6**: Cycle ETA ML
-- **Phase 7**: Multimodal Voice (STT/TTS)
-- **Phase 8**: In-cab LLM & RAG manual search
-- **Phase 9**: Training & evaluation pipeline
-- **Phase 10**: Offline sync & outbox dispatcher
-- **Phase 11**: Docker containerization
-- **Phase 12**: AWS Cloud synchronization
-- **Phase 13**: Judge/Demonstration scenario runner
+- **Phase 5**: Cloud backend and offline sync (complete)
+- **Phase 6**: Anomaly detection ML (complete)
+- **Phase 7**: Cycle ETA ML
+- **Phase 8**: Multimodal voice, LLM and RAG
+- **Phase 9**: Closed-loop operator coaching
+- **Phase 10**: Full integration and production hardening
+- **Phase 11**: Deterministic demonstration mode
+- **Phase 12**: Docker deployment
+- **Phase 13**: AWS cloud deployment
+- **Phase 14**: Final audit and judging package
+
+---
+
+## Phase 6 — Advisory Anomaly Analytics (Implemented)
+
+Phase 6 is implemented end-to-end: six causal 15-minute behavioral features, operator-specific baselines with global fallback, a versioned Isolation Forest artifact, local and cloud persistence, REST APIs, and Command Center/Insights UI integration. Safety remains deterministic and independent from the model.
+
+```bash
+# Reproduce the checked-in model artifact and diagnostics
+python scripts/train_anomaly.py
+
+# Verify backend and frontend
+python -m pytest -q
+cd frontend
+npm run build
+npm run lint
+```
+
+Important endpoints include `/api/anomalies/model/health`, `/api/anomalies/latest-inference`, `/api/anomalies`, `/api/operators/{operator_id}/baseline`, and `/api/cloud/anomalies`. See [ANOMALY_MODEL.md](ANOMALY_MODEL.md) for feature definitions, artifact handling, diagnostics, limitations, and API details.

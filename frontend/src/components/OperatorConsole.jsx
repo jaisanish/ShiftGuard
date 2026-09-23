@@ -15,6 +15,8 @@ import IncidentNotificationToast from './IncidentNotificationToast';
 import SafetyPage from './SafetyPage';
 import IncidentsPage from './IncidentsPage';
 import CoachPage from './training/CoachPage';
+import AnalyticsPage from './AnalyticsPage';
+import AnomalyInsightCard from './AnomalyInsightCard';
 
 import { AlertCircle, RefreshCw, Radio } from 'lucide-react';
 
@@ -40,9 +42,11 @@ export default function OperatorConsole() {
     activeAlerts,
     openIncidentDetail,
     refreshData,
+    anomalyInsight,
+    anomalyModelHealth,
   } = useRealtime();
 
-  const [activeTab, setActiveTab] = useState('cockpit'); // 'cockpit' | 'safety' | 'incidents' | 'coach'
+  const [activeTab, setActiveTab] = useState('cockpit'); // cockpit | safety | incidents | insights | coach
   const [coachingRecommendation, setCoachingRecommendation] = useState(null);
   const [targetLessonId, setTargetLessonId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -140,6 +144,8 @@ export default function OperatorConsole() {
               setActiveTab('cockpit');
             }}
           />
+        ) : activeTab === 'insights' ? (
+          <AnalyticsPage />
         ) : loadingInitial ? (
           <div className="glass-panel p-16 rounded-sm text-center space-y-4">
             <Radio className="w-8 h-8 text-emerald-400 animate-pulse mx-auto" />
@@ -170,6 +176,12 @@ export default function OperatorConsole() {
                 }}
               />
             )}
+
+            <AnomalyInsightCard
+              insight={anomalyInsight}
+              modelHealth={anomalyModelHealth}
+              onOpenInsights={() => setActiveTab('insights')}
+            />
 
             {/* Ask ShiftGuard In-Cab Entry */}
             <CopilotEntry />

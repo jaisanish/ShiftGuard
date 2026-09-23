@@ -10,12 +10,7 @@ import { useRealtime } from '../context/RealtimeContext';
  * Single source of truth: backend EdgeSafetyEngine via RealtimeContext.
  */
 export default function SafetyPanel({ telemetry: propTelemetry }) {
-  let contextData = {};
-  try {
-    contextData = useRealtime();
-  } catch (e) {
-    // Graceful fallback
-  }
+  const contextData = useRealtime();
 
   const telemetry = propTelemetry || contextData.telemetry || {};
   const safetyState = contextData.safetyState || {

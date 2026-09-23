@@ -151,24 +151,39 @@ class IncidentModel(Base):
 
 
 # ============================================================================
-# 5. Anomalies Model (Structurally Valid for Future Extension)
+# 5. Anomalies Model (Phase 6 Advisory Analytics)
 # ============================================================================
 class AnomalyModel(Base):
     """
-    Telemetry sensor anomaly detections.
-    Reserved for future Anomaly ML Engine.
+    Versioned advisory operating-pattern detections produced by the anomaly model.
+    This table has no role in deterministic edge safety decisions.
     """
     __tablename__ = "anomalies"
 
     id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
     machine_id = Column(String(64), nullable=False, index=True)
-    sensor_name = Column(String(64), nullable=False)
+    operator_id = Column(String(64), nullable=False, index=True)
+    window_start = Column(String(64), nullable=False, index=True)
+    window_end = Column(String(64), nullable=False, index=True)
+    anomaly_type = Column(String(64), nullable=False, index=True)
     anomaly_score = Column(Float, nullable=False)
-    detected_value = Column(Float, nullable=False)
+    current_value = Column(Float, nullable=True)
+    baseline_value = Column(Float, nullable=True)
+    evidence = Column(Text, nullable=False, default="[]")
+    baseline_source = Column(String(32), nullable=False, default="GLOBAL_FALLBACK")
+    # Legacy sensor fields are retained as nullable compatibility columns.
+    sensor_name = Column(String(64), nullable=True)
+    detected_value = Column(Float, nullable=True)
     expected_range_min = Column(Float, nullable=True)
     expected_range_max = Column(Float, nullable=True)
     timestamp = Column(String(64), nullable=False, default=utc_now_iso, index=True)
-    model_version = Column(String(64), nullable=True)
+    model_version = Column(String(64), nullable=False)
+    created_at = Column(String(64), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        Index("ix_anomalies_operator_time", "operator_id", "window_end"),
+        Index("ix_anomalies_machine_type", "machine_id", "anomaly_type"),
+    )
 
 
 # ============================================================================
@@ -234,4 +249,3 @@ class SyncOutboxModel(Base):
     __table_args__ = (
         Index("ix_sync_outbox_status_type", "status", "event_type"),
     )
-

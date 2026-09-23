@@ -15,6 +15,7 @@ from backend.app.cloud.repositories.event_repo import EventRepository
 from backend.app.cloud.repositories.telemetry_repo import TelemetryRepository
 from backend.app.cloud.repositories.alert_repo import AlertRepository
 from backend.app.cloud.repositories.incident_repo import IncidentRepository
+from backend.app.cloud.repositories.anomaly_repo import AnomalyRepository
 
 logger = logging.getLogger("shiftguard.cloud.sync")
 
@@ -71,6 +72,8 @@ class CloudSyncService:
                     AlertRepository.upsert_alert(db, event_id, payload)
                 elif event_type in ("INCIDENT", "INCIDENT_ACKNOWLEDGED"):
                     IncidentRepository.upsert_incident(db, event_id, payload)
+                elif event_type == "ANOMALY":
+                    AnomalyRepository.insert_anomaly(db, event_id, payload)
                 else:
                     logger.warning(f"[SYNC] Unknown event type '{event_type}' for event {event_id}. Recorded in log.")
 

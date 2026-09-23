@@ -17,6 +17,7 @@ from backend.app.cloud.cloud_db import get_cloud_db
 from backend.app.cloud.repositories.alert_repo import AlertRepository
 from backend.app.cloud.repositories.incident_repo import IncidentRepository
 from backend.app.cloud.repositories.telemetry_repo import TelemetryRepository
+from backend.app.cloud.repositories.anomaly_repo import AnomalyRepository
 
 logger = logging.getLogger("shiftguard.api.cloud_history")
 
@@ -95,6 +96,27 @@ class CloudIncidentResponse(BaseModel):
     status: str
     gps_zone: Optional[str] = None
     timestamp: str
+    synced_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CloudAnomalyResponse(BaseModel):
+    id: str
+    event_id: str
+    timestamp: str
+    machine_id: str
+    operator_id: str
+    window_start: str
+    window_end: str
+    anomaly_type: str
+    anomaly_score: float
+    current_value: Optional[float] = None
+    baseline_value: Optional[float] = None
+    evidence: str
+    baseline_source: str
+    model_version: str
+    created_at: str
     synced_at: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -184,4 +206,19 @@ def get_cloud_incidents(
         end_time=end_time,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.get("/anomalies", response_model=List[CloudAnomalyResponse])
+def get_cloud_anomalies(
+    machine_id: Optional[str] = Query(None),
+    operator_id: Optional[str] = Query(None),
+    anomaly_type: Optional[str] = Query(None),
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    cloud_db: Session = Depends(get_cloud_db),
+):
+    """Retrieve synchronized model-generated anomaly analytics from the cloud store."""
+    return AnomalyRepository.get_historical_anomalies(
+        cloud_db, machine_id, operator_id, anomaly_type, limit, offset
     )

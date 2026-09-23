@@ -91,6 +91,17 @@ export default function MachineHeader({
           </button>
 
           <button
+            onClick={() => onSelectTab?.('insights')}
+            className={`px-3 py-1.5 rounded-xs text-xs font-mono font-semibold tracking-wider transition-colors cursor-pointer ${
+              activeTab === 'insights'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.15)]'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]'
+            }`}
+          >
+            INSIGHTS
+          </button>
+
+          <button
             onClick={() => onSelectTab?.('coach')}
             className={`px-3 py-1.5 rounded-xs text-xs font-mono font-semibold tracking-wider transition-colors cursor-pointer relative flex items-center gap-1.5 ${
               activeTab === 'coach'

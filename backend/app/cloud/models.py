@@ -176,19 +176,29 @@ class CloudTaskModel(BaseCloud):
 
 
 class CloudAnomalyModel(BaseCloud):
-    """Synchronized sensor anomaly predictions (Phase 6)."""
+    """Synchronized advisory operating-pattern anomaly results (Phase 6)."""
     __tablename__ = "cloud_anomalies"
 
     id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    event_id = Column(String(64), nullable=False, unique=True, index=True)
     machine_id = Column(String(64), nullable=False, index=True)
-    sensor_name = Column(String(64), nullable=False)
+    operator_id = Column(String(64), nullable=False, index=True)
+    window_start = Column(String(64), nullable=False, index=True)
+    window_end = Column(String(64), nullable=False, index=True)
+    anomaly_type = Column(String(64), nullable=False, index=True)
     anomaly_score = Column(Float, nullable=False)
-    detected_value = Column(Float, nullable=False)
-    expected_range_min = Column(Float, nullable=True)
-    expected_range_max = Column(Float, nullable=True)
+    current_value = Column(Float, nullable=True)
+    baseline_value = Column(Float, nullable=True)
+    evidence = Column(Text, nullable=False, default="[]")
+    baseline_source = Column(String(32), nullable=False, default="GLOBAL_FALLBACK")
     timestamp = Column(String(64), nullable=False, index=True)
-    model_version = Column(String(64), nullable=True)
+    model_version = Column(String(64), nullable=False)
+    created_at = Column(String(64), nullable=False)
     synced_at = Column(String(64), nullable=False, default=cloud_utc_now_iso)
+
+    __table_args__ = (
+        Index("ix_cloud_anomaly_operator_time", "operator_id", "window_end"),
+    )
 
 
 class CloudEtaPredictionModel(BaseCloud):

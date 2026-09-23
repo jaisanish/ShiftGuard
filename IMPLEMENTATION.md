@@ -1,8 +1,8 @@
 # ShiftGuard — Implementation Tracker
 
 ## 1. Project Status
-**Current State**: Phase 4 Realtime Operator Console & Edge Safety Engine Integration Completed & Verified  
-**Execution Phase**: Phase 4 Complete (Phase 1, 2.0, 2.1, 3 Intact)  
+**Current State**: Phase 6 Advisory Anomaly Analytics Completed & Verified
+**Execution Phase**: Phases 1–6 complete; Phase 7 ETA is next
 **Deliverables Status**:
 - [x] Phase 1 Core Deliverables (Synthetic Data, SQLite, FastAPI, API Contracts, React Console, Integration)
 - [x] Phase 2.0 Architecture Baseline (`ARCHITECTURE.md`, ML contracts, decoupled interfaces, module structure)
@@ -10,10 +10,10 @@
 - [x] Phase 2.x Operator Console Clean-Up, Semantics & Training Hub (Completed & Verified)
 - [x] Phase 3 Deterministic Edge Safety Engine & Alert State Machine (Completed & Verified)
 - [x] Phase 4 Realtime Operator Console & Incident Context Buffers (Completed & Verified)
-- [ ] Phase 5 In-Cab Voice & Copilot (Intent Router, Manual RAG, LLM Integration)
-- [ ] Phase 6 ML Model Pipeline Ingestion (Teammate models via `AnomalyPredictor` and `ETAPredictor`)
-- [ ] Phase 7 Local-First Sync Outbox & Cloud Sync
-- [ ] Phase 8 Docker & Cloud Deployment
+- [x] Phase 5 Local-First Sync Outbox & Cloud Sync (Completed & Verified)
+- [x] Phase 6 Anomaly Detection Build, Training and Integration (Completed & Verified)
+- [ ] Phase 7 ETA Prediction Build, Training and Integration
+- [ ] Phase 8 Voice Copilot, LLM and RAG
 
 ---
 
@@ -28,7 +28,7 @@
 - [x] **Strict Zero-Fabricated ETA Invariant**:
   - Removed all hardcoded mathematical formulas (`estimatedMin * 0.72`) calculating fake minutes remaining.
   - Replaced with authoritative status: `MODEL PENDING` / `ETA MODEL NOT CONNECTED` across `CurrentTask` and `TaskPanel`.
-  - Explicit explanation to operator: *"Predicted completion times require the ML model pipeline (Phase 6)."*
+  - Explicit explanation to operator: *"Predicted completion times require the ETA model pipeline (Phase 7)."*
 - [x] **Authoritative Machine Operating State**:
   - Direct reflection of `telemetry.operating_state` from backend single source of truth.
   - Canonicalized via `to_canonical_operating_state()` to `IDLE`, `WORKING`, `TRAVELLING`, `STOPPED`. Zero frontend guessing.
@@ -300,3 +300,30 @@ python simulator/replay.py --scenario normal --loop --speed 1.0
 - **Safety Decision Engine**: Edge safety rules (proximity radar interlock, seatbelt motion interlock, thermal boundaries) and the Alert State Machine (`ACTIVE` -> `ACKNOWLEDGED` -> `CLEARED`) will be implemented in Phase 2.2.
 - **Offline Sync Outbox**: Local outbox queue and cloud sync daemon are scheduled for Phase 2.3.
 - **ML Models**: ML models are intentionally decoupled behind abstract contracts (`AnomalyPredictor`, `ETAPredictor`) and will be implemented by data science teammates.
+
+---
+
+## Phase 6 — Anomaly Detection: Build, Train, Serve and Integrate
+
+Status: **COMPLETE**
+
+- Implemented six leakage-free rolling features in `backend/app/ml/anomaly/features.py`.
+- Implemented operator baseline statistics with six-window minimum and explicit global fallback.
+- Added offline `scripts/train_anomaly.py`; training is never performed during FastAPI startup.
+- Trained and committed `anomaly-iforest-v1.0.0` with feature schema, dataset SHA-256, calibration, diagnostics and limitations metadata.
+- Added inference evidence mapping without representing semantic post-processing labels as model-native concepts.
+- Expanded local/cloud anomaly schemas and integrated idempotent sync-outbox event type `ANOMALY`.
+- Added model-health, inference, history, detail, baseline and operator-summary APIs.
+- Added React Command Center insight card and dedicated Insights page with genuine model scores and baseline evidence.
+- Added fail-closed UI/API behavior when the artifact is unavailable; edge safety has no model dependency.
+- Corrected local in-process cloud sync and added explicit session injection for deterministic integration tests.
+
+Verification on 2026-09-24:
+
+- `python scripts/train_anomaly.py`: 3,200 rows → 160 windows; artifact generated successfully.
+- Synthetic controlled scenarios: accuracy `0.857`, precision `1.000`, recall `0.833` (6/7 expected outcomes).
+- `python -m pytest -q`: **73 passed**.
+- `npm run build`: success, 1,903 modules transformed.
+- `npm run lint`: success with pre-existing warnings and no errors.
+
+Known limitation: the controlled amber proximity-warning scenario stays below the anomaly threshold. This does not affect proximity safety because the deterministic edge engine remains authoritative. See `ANOMALY_MODEL.md`.

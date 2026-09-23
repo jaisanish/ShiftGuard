@@ -407,3 +407,67 @@ export async function completeTrainingLesson(completionData) {
     };
   }
 }
+
+/** Phase 6: Read the versioned anomaly model readiness contract. */
+export async function fetchAnomalyModelHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/api/anomalies/model/health`, { signal: AbortSignal.timeout(4000) });
+    return await handleResponse(res);
+  } catch (err) {
+    console.warn('[API] Anomaly model health unavailable:', err.message);
+    return { status: 'unavailable', model_loaded: false, feature_schema: [], error: err.message };
+  }
+}
+
+/** Phase 6: Run read-only inference against the latest complete 15-minute window. */
+export async function fetchLatestAnomalyInference(machineId, operatorId = null) {
+  try {
+    const params = new URLSearchParams({ machine_id: machineId });
+    if (operatorId) params.set('operator_id', operatorId);
+    const res = await fetch(`${API_BASE}/api/anomalies/latest-inference?${params}`, {
+      signal: AbortSignal.timeout(6000),
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.warn('[API] Latest anomaly inference unavailable:', err.message);
+    return null;
+  }
+}
+
+/** Phase 6: Retrieve persisted advisory anomaly results. */
+export async function fetchAnomalies(params = {}) {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/api/anomalies${query ? `?${query}` : ''}`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.warn('[API] Anomaly history unavailable:', err.message);
+    return [];
+  }
+}
+
+export async function fetchOperatorBaseline(operatorId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/operators/${encodeURIComponent(operatorId)}/baseline`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.warn('[API] Operator anomaly baseline unavailable:', err.message);
+    return null;
+  }
+}
+
+export async function fetchAnomalySummary(operatorId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/operators/${encodeURIComponent(operatorId)}/anomaly-summary`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.warn('[API] Operator anomaly summary unavailable:', err.message);
+    return null;
+  }
+}

@@ -184,7 +184,7 @@ def test_end_to_end_edge_to_cloud_sync(db_session, monkeypatch):
     assert outbox_rec.status == "PENDING"
 
     # 2. Execute sync cycle
-    result = asyncio.run(sync_worker.sync_once())
+    result = asyncio.run(sync_worker.sync_once(db_session))
     assert result["cloud_connected"] is True
     assert result["synced"] >= 1
 

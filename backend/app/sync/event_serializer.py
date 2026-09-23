@@ -7,7 +7,7 @@ event dictionaries for the sync_outbox queue.
 """
 
 from typing import Any, Dict
-from backend.app.database.models import AlertModel, IncidentModel, TelemetryModel
+from backend.app.database.models import AlertModel, AnomalyModel, IncidentModel, TelemetryModel
 
 
 def serialize_telemetry_event(telemetry: TelemetryModel) -> Dict[str, Any]:
@@ -77,4 +77,24 @@ def serialize_incident_event(incident: IncidentModel) -> Dict[str, Any]:
         "status": incident.status,
         "gps_zone": incident.gps_zone,
         "timestamp": incident.timestamp,
+    }
+
+
+def serialize_anomaly_event(anomaly: AnomalyModel) -> Dict[str, Any]:
+    """Serialize a persisted advisory anomaly result for cloud analytics."""
+    return {
+        "id": anomaly.id,
+        "timestamp": anomaly.timestamp,
+        "machine_id": anomaly.machine_id,
+        "operator_id": anomaly.operator_id,
+        "window_start": anomaly.window_start,
+        "window_end": anomaly.window_end,
+        "anomaly_type": anomaly.anomaly_type,
+        "anomaly_score": anomaly.anomaly_score,
+        "current_value": anomaly.current_value,
+        "baseline_value": anomaly.baseline_value,
+        "evidence": anomaly.evidence,
+        "baseline_source": anomaly.baseline_source,
+        "model_version": anomaly.model_version,
+        "created_at": anomaly.created_at,
     }
