@@ -8,12 +8,15 @@ directly into the edge ingestion pipeline for live demonstrations and testing.
 
 import asyncio
 import logging
+import uuid
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Query, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
 from simulator.generator import TelemetryGenerator
-from simulator.scenarios import SCENARIO_TASK_MAP
+from simulator.scenarios import SCENARIO_DESCRIPTIONS, SCENARIO_TASK_MAP
+from backend.app.sync.sync_worker import sync_worker
 from backend.app.services.broadcast_service import broadcast_service
 from backend.app.database.connection import SessionLocal
 from backend.app.services.telemetry_service import TelemetryService
@@ -32,7 +35,20 @@ class HazardInjectResponse(BaseModel):
     message: str
 
 
-async def _run_hazard_injection(scenario: str, machine_id: Optional[str] = None):
+class DemoRunRequest(BaseModel):
+    scenario: str
+    machine_id: Optional[str] = None
+    frame_delay_ms: int = 0
+
+
+DEMO_SCENARIOS = {
+    **{name: {"telemetry_scenario": name, "description": SCENARIO_DESCRIPTIONS[name], "expected": "Deterministic telemetry and edge evaluation."} for name in SCENARIO_TASK_MAP},
+    "offline_sync": {"telemetry_scenario": "normal", "description": "Normal edge operation while cloud synchronization is deliberately unavailable.", "expected": "Telemetry remains local and the outbox retains pending events until cloud restoration."},
+}
+demo_status = {"status": "idle", "run_id": None, "scenario": None, "frames_processed": 0, "cloud_forced_offline": False}
+
+
+async def _run_hazard_injection(scenario: str, machine_id: Optional[str] = None, frame_delay_seconds: float = 0.5) -> int:
     """Asynchronously generates and feeds frames into the edge pipeline."""
     gen = TelemetryGenerator(
         scenario=scenario,
@@ -84,7 +100,52 @@ async def _run_hazard_injection(scenario: str, machine_id: Optional[str] = None)
         finally:
             db.close()
 
-        await asyncio.sleep(0.5)
+        if frame_delay_seconds:
+            await asyncio.sleep(frame_delay_seconds)
+    return len(frames)
+
+
+@router.get("/demo/scenarios")
+def list_demo_scenarios():
+    """List named deterministic demo scripts and their expected outcomes."""
+    return [{"id": name, **details} for name, details in DEMO_SCENARIOS.items()]
+
+
+@router.get("/demo/status")
+def get_demo_status():
+    """Return the most recent deterministic demo run without mutating telemetry history."""
+    return demo_status
+
+
+@router.post("/demo/run")
+async def run_deterministic_demo(request: DemoRunRequest):
+    """Run every frame in a named scenario before returning; zero delay is repeatable and presentation-friendly."""
+    scenario_id = request.scenario.strip().lower()
+    if scenario_id not in DEMO_SCENARIOS:
+        raise HTTPException(status_code=400, detail=f"Invalid demo scenario. Valid values: {list(DEMO_SCENARIOS)}")
+    run_id = str(uuid.uuid4())
+    details = DEMO_SCENARIOS[scenario_id]
+    force_offline = scenario_id == "offline_sync"
+    if force_offline:
+        sync_worker.cloud_override_enabled = False
+        sync_worker.cloud_connected = False
+    demo_status.update({"status": "running", "run_id": run_id, "scenario": scenario_id, "frames_processed": 0, "cloud_forced_offline": force_offline, "started_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")})
+    try:
+        count = await _run_hazard_injection(details["telemetry_scenario"], request.machine_id, max(request.frame_delay_ms, 0) / 1000)
+        demo_status.update({"status": "completed", "frames_processed": count, "completed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")})
+    except Exception as exc:
+        demo_status.update({"status": "failed", "error": str(exc)})
+        raise HTTPException(status_code=500, detail=f"Demo run failed: {exc}") from exc
+    return {**demo_status, "description": details["description"], "expected": details["expected"]}
+
+
+@router.post("/demo/restore-cloud")
+def restore_demo_cloud():
+    """End an offline-sync demo and return cloud control to normal configuration."""
+    sync_worker.cloud_override_enabled = None
+    sync_worker.cloud_connected = True
+    demo_status["cloud_forced_offline"] = False
+    return {"status": "restored", "cloud_connected": True}
 
 
 @router.post("/inject-hazard", response_model=HazardInjectResponse)
