@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DATABASE_URL: sqlite:////data/shiftguard.db
+      EDGE_DATABASE_URL: sqlite:////data/shiftguard.db
+      CLOUD_DATABASE_URL: sqlite:////data/shiftguard_cloud.db
+      CLOUD_SYNC_URL: http://backend:8000/api/sync/events
+      CLOUD_ENABLED: "true"
+      CORS_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
+      COPILOT_PROVIDER: local
+    volumes:
+      - shiftguard_edge_data:/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+
+volumes:
+  shiftguard_edge_data:
