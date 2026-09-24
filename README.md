@@ -168,14 +168,14 @@ The active delivery sequence is:
 - **Phase 4**: Advanced operator console integration
 - **Phase 5**: Cloud backend and offline sync (complete)
 - **Phase 6**: Anomaly detection ML (complete)
-- **Phase 7**: Cycle ETA ML
-- **Phase 8**: Multimodal voice, LLM and RAG
-- **Phase 9**: Closed-loop operator coaching
-- **Phase 10**: Full integration and production hardening
-- **Phase 11**: Deterministic demonstration mode
-- **Phase 12**: Docker deployment
-- **Phase 13**: AWS cloud deployment
-- **Phase 14**: Final audit and judging package
+- **Phase 7**: Cycle ETA ML (complete)
+- **Phase 8**: Multimodal voice, LLM and RAG (complete)
+- **Phase 9**: Closed-loop operator coaching (complete)
+- **Phase 10**: Full integration and production hardening (complete)
+- **Phase 11**: Deterministic demonstration mode (complete)
+- **Phase 12**: Docker deployment (complete)
+- **Phase 13**: AWS cloud deployment (intentionally skipped — not required for local delivery)
+- **Phase 14**: Final audit and judging package (complete)
 
 ---
 

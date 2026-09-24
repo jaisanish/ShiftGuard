@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="ShiftGuard Edge API",
     description="Smart Operator Assistant for CAT Machinery — Edge, Cloud and Advisory Analytics",
-    version="2.8.0",
+    version="2.14.0",
     lifespan=lifespan,
 )
 
@@ -97,8 +97,8 @@ def root():
     """Root metadata endpoint."""
     return {
         "service": settings.SERVICE_NAME,
-        "version": "2.8.0",
-        "phase": 8,
+        "version": "2.14.0",
+        "phase": 14,
         "status": "operational",
         "docs_url": "/docs",
         "health_url": "/health",
